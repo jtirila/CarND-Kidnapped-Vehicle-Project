@@ -17,6 +17,11 @@
 
 #include "particle_filter.h"
 
+#define X_MAX 100
+#define X_MIN -X_MAX
+#define Y_MAX X_MAX
+#define Y_MIN X_MIN
+
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
@@ -24,14 +29,33 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
+  num_particles = 1000;
+  is_initialized = true;
+  double part_theta;
+  double part_x;
+  double part_y;
 
+  std::uniform_real_distribution<double> my_dis_x(X_MIN, X_MAX);
+  std::uniform_real_distribution<double> my_dis_y(X_MIN, X_MAX);
+  std::uniform_real_distribution<double> my_dis_theta(-M_PI, M_PI);
+  std::default_random_engine gen;
+
+  for(int particle_idx = 0; particle_idx < num_particles; particle_idx++){
+    // TODO: initialize these to random values in a suitable range
+    part_x = my_dis_x(gen);
+    part_y = my_dis_y(gen);
+    part_theta = my_dis_theta(gen);
+    particles.push_back(Particle(particle_idx, part_x, part_y, part_theta));
+  }
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
+  cout << "velocity:" << velocity << "yaw rate: " << yaw_rate << "\n";
 	// TODO: Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
 
 }
 
