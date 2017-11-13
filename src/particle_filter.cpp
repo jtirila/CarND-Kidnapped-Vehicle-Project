@@ -35,13 +35,13 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
   double part_x;
   double part_y;
 
+  // TODO: check the ranges
   std::uniform_real_distribution<double> my_dis_x(X_MIN, X_MAX);
   std::uniform_real_distribution<double> my_dis_y(X_MIN, X_MAX);
   std::uniform_real_distribution<double> my_dis_theta(-M_PI, M_PI);
   std::default_random_engine gen;
 
   for(int particle_idx = 0; particle_idx < num_particles; particle_idx++){
-    // TODO: initialize these to random values in a suitable range
     part_x = my_dis_x(gen);
     part_y = my_dis_y(gen);
     part_theta = my_dis_theta(gen);
@@ -55,6 +55,14 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
+  for(int part_id = 0; part_id = particles.size(); part_id++){
+    // TODO: Add noise
+    Particle part = particles[part_id];
+    part.x += velocity / yaw_rate * (std::sin(part.theta + yaw_rate * delta_t) - std::sin(part.theta));
+    part.y += velocity / yaw_rate * (- std::cos(part.theta + yaw_rate * delta_t) + std::cos(part.theta));
+    part.theta += yaw_rate * delta_t;
+  }
 
 
 }
