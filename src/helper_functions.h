@@ -55,14 +55,15 @@ struct LandmarkObs {
  * @param (x2,y2) x and y coordinates of second point
  * @output Euclidean distance between two 2D points
  */
-inline double dist(double x1, double y1, double x2, double y2) {
-	return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-}
 
-double VectorDist(const std::vector<double>& x, const std::vector<double>& y){
+inline double VectorDist(const std::vector<double>& x, const std::vector<double>& y){
   double dx = x[0] - y[0];
   double dy = x[1] - y[1];
   return std::sqrt(dx * dx + dy * dy);
+}
+
+inline double dist(double x1, double y1, double x2, double y2) {
+  return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 
@@ -251,7 +252,7 @@ inline bool read_landmark_data(std::string filename, std::vector<LandmarkObs>& o
 
 
 // TODO: write docstring
-Map::single_landmark_s FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
+inline Map::single_landmark_s FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
 	double min_dist;
 	int min_ind = 0;
 	for(int i = 0; i < landmarks.size(); i++){
@@ -274,7 +275,7 @@ Map::single_landmark_s FindClosestLandmark(const std::vector<Map::single_landmar
 }
 
 // TODO: write docstring
-std::vector<double> car_map_transform(const std::vector<double>& meas, const std::vector<double>& particle) {
+inline std::vector<double> car_map_transform(const std::vector<double>& meas, const std::vector<double>& particle) {
 	std::vector<double> result;
 	double px = particle[0];
 	double py = particle[1];
@@ -289,7 +290,7 @@ std::vector<double> car_map_transform(const std::vector<double>& meas, const std
 	return result;
 }
 
-double EvaluateGaussian(const std::vector<double>& tobs, const Map::single_landmark_s& landmark){
+inline double EvaluateGaussian(const std::vector<double>& tobs, const Map::single_landmark_s& landmark){
   double std_x = 0.3;
   double std_y = 0.3;
   double diff_x = tobs[0] - landmark.x_f;
