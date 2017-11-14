@@ -9,6 +9,7 @@
 #define HELPER_FUNCTIONS_H_
 
 #include <sstream>
+// #include "particle_filter.h"
 #include <fstream>
 #include <math.h>
 #include <vector>
@@ -57,6 +58,13 @@ struct LandmarkObs {
 inline double dist(double x1, double y1, double x2, double y2) {
 	return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
+
+double VectorDist(const std::vector<double>& x, const std::vector<double>& y){
+  double dx = x[0] - y[0];
+  double dy = x[1] - y[1];
+  return std::sqrt(dx * dx + dy * dy);
+}
+
 
 inline double * getError(double gt_x, double gt_y, double gt_theta, double pf_x, double pf_y, double pf_theta) {
 	static double error[3];
@@ -239,6 +247,56 @@ inline bool read_landmark_data(std::string filename, std::vector<LandmarkObs>& o
 		observations.push_back(meas);
 	}
 	return true;
+}
+
+
+// TODO: write docstring
+Map::single_landmark_s FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
+	double min_dist;
+	int min_ind = 0;
+	for(int i = 0; i < landmarks.size(); i++){
+    std::vector<double> landmark_vec = {landmarks[i].x_f, landmarks[i].y_f};
+		double current_dist = VectorDist(landmark_vec, tobs);
+		// std::cout << "\nindex " << i << ": dist between (" << landmarks[i][0] << ", " << landmarks[i][1] << ") and (" <<
+		//              tobs[0] << ", " << tobs[1] << "): " <<  current_dist << "; min so far: " << min_dist;
+		if(i > 0) {
+			if (current_dist < min_dist) {
+				min_ind = i;
+				min_dist = current_dist;
+			}
+		}
+		else {
+			min_ind = 0;
+			min_dist = current_dist;
+		}
+	}
+	return landmarks[min_ind];
+}
+
+// TODO: write docstring
+std::vector<double> car_map_transform(const std::vector<double>& meas, const std::vector<double>& particle) {
+	std::vector<double> result;
+	double px = particle[0];
+	double py = particle[1];
+	double theta = particle[2];
+
+	double cx = meas[0];
+	double cy = meas[1];
+
+	result.push_back(px + std::cos(theta) * cx - std::sin(theta) * cy);
+	result.push_back(py + std::sin(theta) * cx - std::cos(theta) * cy);
+	result.push_back(1.0);
+	return result;
+}
+
+double EvaluateGaussian(const std::vector<double>& tobs, const Map::single_landmark_s& landmark){
+  double std_x = 0.3;
+  double std_y = 0.3;
+  double diff_x = tobs[0] - landmark.x_f;
+  double diff_y = tobs[1] - landmark.y_f;
+  double x_sqr_diff = diff_x * diff_x  / (2.0 * std_x * std_x);
+  double y_sqr_diff = diff_y * diff_y  / (2.0 * std_y * std_y);
+  return 1.0 / (2.0 * M_PI * std_x * std_y) * std::exp(-(x_sqr_diff + y_sqr_diff));
 }
 
 #endif /* HELPER_FUNCTIONS_H_ */
