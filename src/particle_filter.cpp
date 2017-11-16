@@ -18,10 +18,8 @@
 #include "particle_filter.h"
 #include "map.h"
 
-#define X_MAX 100
-#define X_MIN -100
-#define Y_MAX 100
-#define Y_MIN -100
+#define X_TOLERANCE 5
+#define Y_TOLERANCE 5
 
 using namespace std;
 
@@ -30,22 +28,23 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-  num_particles = 1000;
+  num_particles = 50;
   is_initialized = true;
   double part_theta;
   double part_x;
   double part_y;
 
   // TODO: check the ranges
-  std::uniform_real_distribution<double> my_dis_x(X_MIN, X_MAX);
-  std::uniform_real_distribution<double> my_dis_y(X_MIN, X_MAX);
-  std::uniform_real_distribution<double> my_dis_theta(-M_PI, M_PI);
-  std::default_random_engine gen;
+  std::normal_distribution<> dist_x(0.0, X_TOLERANCE);
+  std::normal_distribution<> dist_y(0.0, Y_TOLERANCE);
+  std::normal_distribution<> dist_theta(0.0, 0.1);
+  std::random_device rd;
+  std::default_random_engine gen(rd());
 
   for(int particle_idx = 0; particle_idx < num_particles; particle_idx++){
-    part_x = my_dis_x(gen);
-    part_y = my_dis_y(gen);
-    part_theta = my_dis_theta(gen);
+    part_x = x + dist_x(gen);
+    part_y = y + dist_y(gen);
+    part_theta = theta + dist_theta(gen);
     particles.push_back(Particle(particle_idx, part_x, part_y, part_theta));
   }
 }
@@ -57,23 +56,27 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
-  std::default_random_engine gen;
-  std::normal_distribution<> dist_x(0.0, std_pos[0]);
-  std::normal_distribution<> dist_y(0.0, std_pos[1]);
-  std::normal_distribution<> dist_theta(0.0, std_pos[2]);
-  double noise_x = dist_x(gen);
-  double noise_y = dist_y(gen);
-  double noise_theta = dist_theta(gen);
+  std::random_device rd;
+  std::default_random_engine gen(rd());
+  std::normal_distribution<> dist_x(0.0, 5 * std_pos[0]);
+  std::normal_distribution<> dist_y(0.0, 5 * std_pos[1]);
+  std::normal_distribution<> dist_theta(0.0, 2 * std_pos[2]);
 
-  Particle part;
+  Particle* part;
   for(int part_id = 0; part_id < particles.size(); part_id++){
-    part = particles[part_id];
-    part.x += velocity / yaw_rate * (std::sin(part.theta + yaw_rate * delta_t) - std::sin(part.theta)) + noise_x;
-    part.y += velocity / yaw_rate * (- std::cos(part.theta + yaw_rate * delta_t) + std::cos(part.theta)) + noise_y;
-    part.theta += yaw_rate * delta_t + noise_theta;
+    double noise_x = dist_x(gen);
+    double noise_y = dist_y(gen);
+    double noise_theta = dist_theta(gen);
+    part = &particles[part_id];
+    part->theta += yaw_rate * delta_t + noise_theta;
+    if(yaw_rate > 0.00001) {
+      part->x += velocity / yaw_rate * (std::sin(part->theta + yaw_rate * delta_t) - std::sin(part->theta)) + noise_x;
+      part->y += velocity / yaw_rate * (-std::cos(part->theta + yaw_rate * delta_t) + std::cos(part->theta)) + noise_y;
+    } else {
+      part->x += velocity * std::cos(part->theta) * delta_t + noise_x;
+      part->y += velocity * std::sin(part->theta) * delta_t + noise_y;
+    }
   }
-
-
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -108,6 +111,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   for(int p_ind = 0; p_ind < particles.size(); p_ind++){
     // Keep the particle in variable for brevity
     Particle particle = particles[p_ind];
+    particle.weight = 1.0;
+    std::vector<int> ass_idx;
+    std::vector<double> ass_x;
+    std::vector<double> ass_y;
 
     // Also keep a version of the particle where we just save the x, y and theta values into a std::vector
     std::vector<double> particle_vec = {particle.x, particle.y, particle.theta};
@@ -116,22 +123,47 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       std::vector<double> obs_vec = {observations[i].x, observations[i].y};
       std::vector<double> tobs_vec = car_map_transform(obs_vec, particle_vec);
       tobss.push_back(tobs_vec);
-      Map::single_landmark_s closest_obs = FindClosestLandmark(map_landmarks.landmark_list, tobs_vec);
-      particle.weight = EvaluateGaussian(tobs_vec, closest_obs);
+      Map::single_landmark_s closestLandmark = FindClosestLandmark(map_landmarks.landmark_list, tobs_vec);
+      particle.weight *= EvaluateGaussian(tobs_vec, closestLandmark);
+      ass_idx.push_back(closestLandmark.id_i);
+      ass_x.push_back(tobs_vec[0]);
+      ass_y.push_back(tobs_vec[1]);
     }
+    // SetAssociations(particle, ass_idx, ass_x, ass_y);
+    particles[p_ind] = particle;
   }
-
-
 }
+
 
 void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight.
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
+  weights = ReturnWeights();
+
+  std::random_device rd;
+  std::default_random_engine gen(rd());
+  std::discrete_distribution<int> distr(weights.begin(), weights.end());
+  std::vector<Particle> p2;
+
+
+  for(int i = 0; i < num_particles; i++){
+    p2.push_back(particles[distr(gen)]);
+  }
+  this->particles = p2;
+
 }
 
-Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
+std::vector<double> ParticleFilter::ReturnWeights(){
+  std::vector<double> weights;
+  for(const Particle& part : particles){
+   weights.push_back(part.weight);
+  }
+  return weights;
+}
+
+Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations, const std::vector<double>& sense_x, const std::vector<double>& sense_y)
 {
 	//particle: the particle to assign each listed association, and association's (x,y) world coordinates mapping to
 	// associations: The landmark id that goes along with each listed association

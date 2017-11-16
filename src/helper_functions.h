@@ -285,7 +285,7 @@ inline std::vector<double> car_map_transform(const std::vector<double>& meas, co
 	double cy = meas[1];
 
 	result.push_back(px + std::cos(theta) * cx - std::sin(theta) * cy);
-	result.push_back(py + std::sin(theta) * cx - std::cos(theta) * cy);
+	result.push_back(py + std::sin(theta) * cx + std::cos(theta) * cy);
 	result.push_back(1.0);
 	return result;
 }
@@ -297,7 +297,8 @@ inline double EvaluateGaussian(const std::vector<double>& tobs, const Map::singl
   double diff_y = tobs[1] - landmark.y_f;
   double x_sqr_diff = diff_x * diff_x  / (2.0 * std_x * std_x);
   double y_sqr_diff = diff_y * diff_y  / (2.0 * std_y * std_y);
-  return 1.0 / (2.0 * M_PI * std_x * std_y) * std::exp(-(x_sqr_diff + y_sqr_diff));
+  double result = 1.0 / (2.0 * M_PI * std_x * std_y) * std::exp(-(x_sqr_diff + y_sqr_diff));
+  return result;
 }
 
 #endif /* HELPER_FUNCTIONS_H_ */
