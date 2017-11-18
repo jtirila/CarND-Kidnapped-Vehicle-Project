@@ -40,8 +40,8 @@ Here are some notes concerning individual template files:
    my own version of a function that computes the Euclidean distance between two vectors
 * `particle_filter.h`: 
   - Some slight changes to the proposed signature of the functions
-    x Using `const` on some occasions where nothing is modified
-    x Using the appropriate data type for map landmark data points 
+    * Using `const` on some occasions where nothing is modified
+    * Using the appropriate data type for map landmark data points 
   - Add the declaration of one more helper function responsible for extracting the weights
     out of the particles vector
   - change from tab indentation to space indentation  
