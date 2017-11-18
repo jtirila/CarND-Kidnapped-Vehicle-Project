@@ -27,7 +27,7 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 
 Alternatively, check out these scripts for doing the same with fewer commands: `./clean.sh`, `./build.sh` and `./run.sh`.
 
-For further instructions and technical notes, please refer to the [oritinal Udacity repository](https://github.com/udacity/CarND-Kidnapped-Vehicle-Project).
+For further instructions and technical notes, please refer to the [original Udacity repository](https://github.com/udacity/CarND-Kidnapped-Vehicle-Project).
 
 # Notes on my Submission
 
