@@ -79,8 +79,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   }
 }
 
-void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations){
-Map::single_landmark_s ParticleFilter::FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
+Map::single_landmark_s ParticleFilter::DataAssociation(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
   double min_dist;
   int min_ind = 0;
   for(int i = 0; i < landmarks.size(); i++){
@@ -137,7 +136,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       std::vector<double> obs_vec = {observations[i].x, observations[i].y};
       std::vector<double> tobs_vec = car_map_transform(obs_vec, particle_vec);
       tobss.push_back(tobs_vec);
-      Map::single_landmark_s closestLandmark = FindClosestLandmark(map_landmarks.landmark_list, tobs_vec);
+      Map::single_landmark_s closestLandmark = DataAssociation(map_landmarks.landmark_list, tobs_vec);
       particle.weight *= EvaluateGaussian(tobs_vec, closestLandmark);
       ass_idx.push_back(closestLandmark.id_i);
       ass_x.push_back(tobs_vec[0]);

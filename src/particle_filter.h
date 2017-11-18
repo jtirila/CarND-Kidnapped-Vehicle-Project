@@ -80,9 +80,8 @@ public:
    * @param predicted Vector of predicted landmark observations
    * @param observations Vector of landmark observations
    */
-  void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
 
-  inline
+  Map::single_landmark_s DataAssociation(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs);
 
 	void updateWeights(double sensor_range, double std_landmark[], const std::vector<LandmarkObs> &observations,
 			const Map &map_landmarks);
