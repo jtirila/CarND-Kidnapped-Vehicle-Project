@@ -252,29 +252,6 @@ inline bool read_landmark_data(std::string filename, std::vector<LandmarkObs>& o
 
 
 // TODO: write docstring
-inline Map::single_landmark_s FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
-	double min_dist;
-	int min_ind = 0;
-	for(int i = 0; i < landmarks.size(); i++){
-    std::vector<double> landmark_vec = {landmarks[i].x_f, landmarks[i].y_f};
-		double current_dist = VectorDist(landmark_vec, tobs);
-		// std::cout << "\nindex " << i << ": dist between (" << landmarks[i][0] << ", " << landmarks[i][1] << ") and (" <<
-		//              tobs[0] << ", " << tobs[1] << "): " <<  current_dist << "; min so far: " << min_dist;
-		if(i > 0) {
-			if (current_dist < min_dist) {
-				min_ind = i;
-				min_dist = current_dist;
-			}
-		}
-		else {
-			min_ind = 0;
-			min_dist = current_dist;
-		}
-	}
-	return landmarks[min_ind];
-}
-
-// TODO: write docstring
 inline std::vector<double> car_map_transform(const std::vector<double>& meas, const std::vector<double>& particle) {
 	std::vector<double> result;
 	double px = particle[0];

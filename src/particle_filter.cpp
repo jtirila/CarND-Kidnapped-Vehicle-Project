@@ -79,13 +79,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   }
 }
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
-	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the
-	//   observed measurement to this particular landmark.
-	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
-	//   implement this method and use it as a helper during the updateWeights phase.
-
+void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations){
+Map::single_landmark_s ParticleFilter::FindClosestLandmark(const std::vector<Map::single_landmark_s> &landmarks, const std::vector<double> &tobs){
+  double min_dist;
+  int min_ind = 0;
+  for(int i = 0; i < landmarks.size(); i++){
+    std::vector<double> landmark_vec = {landmarks[i].x_f, landmarks[i].y_f};
+    double current_dist = VectorDist(landmark_vec, tobs);
+    // std::cout << "\nindex " << i << ": dist between (" << landmarks[i][0] << ", " << landmarks[i][1] << ") and (" <<
+    //              tobs[0] << ", " << tobs[1] << "): " <<  current_dist << "; min so far: " << min_dist;
+    if(i > 0) {
+      if (current_dist < min_dist) {
+        min_ind = i;
+        min_dist = current_dist;
+      }
+    }
+    else {
+      min_ind = 0;
+      min_dist = current_dist;
+    }
+  }
+  return landmarks[min_ind];
 }
+
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
@@ -105,8 +121,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
   // A variable to hold the closest observation
   std::vector<LandmarkObs> closest_obss;
-
-  // A variable to hold for each measurement the closest observation
 
   for(int p_ind = 0; p_ind < particles.size(); p_ind++){
     // Keep the particle in variable for brevity
@@ -140,7 +154,7 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
-  weights = ReturnWeights();
+  ExtractWeights();
 
   std::random_device rd;
   std::default_random_engine gen(rd());
@@ -155,12 +169,12 @@ void ParticleFilter::resample() {
 
 }
 
-std::vector<double> ParticleFilter::ReturnWeights(){
-  std::vector<double> weights;
+void ParticleFilter::ExtractWeights(){
+  std::vector<double> new_weights;
   for(const Particle& part : particles){
-   weights.push_back(part.weight);
+   new_weights.push_back(part.weight);
   }
-  return weights;
+  weights.swap(new_weights);
 }
 
 Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations, const std::vector<double>& sense_x, const std::vector<double>& sense_y)
