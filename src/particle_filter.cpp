@@ -18,8 +18,8 @@
 #include "particle_filter.h"
 #include "map.h"
 
-#define X_TOLERANCE 5
-#define Y_TOLERANCE 5
+const double X_TOLERANCE = 5.0;
+const double Y_TOLERANCE = 5.0;
 
 using namespace std;
 
@@ -28,7 +28,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-  num_particles = 50;
   is_initialized = true;
   double part_theta;
   double part_x;
@@ -50,8 +49,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-  cout << "velocity:" << velocity << "yaw rate: " << yaw_rate << "\n";
-	// TODO: Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
@@ -69,12 +66,20 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     double noise_theta = dist_theta(gen);
     part = &particles[part_id];
     part->theta += yaw_rate * delta_t + noise_theta;
-    if(yaw_rate > 0.00001) {
-      part->x += velocity / yaw_rate * (std::sin(part->theta + yaw_rate * delta_t) - std::sin(part->theta)) + noise_x;
-      part->y += velocity / yaw_rate * (-std::cos(part->theta + yaw_rate * delta_t) + std::cos(part->theta)) + noise_y;
+
+    double sin_theta = std::sin(part->theta);
+    double cos_theta = std::cos(part->theta);
+    double delta_yaw = yaw_rate * delta_t;
+    double velocity_per_yaw = velocity / yaw_rate;
+    if(yaw_rate > 0.000001 || yaw_rate < -0.000001) {
+      // The review suggested that these equations should be used when yaw_rate is not equal to zero.
+      // I am under the impression that in C++, an exact float / double comparison to zero (val == 0.0 or val != 0.0)
+      // is not a good solution so using these threshold values. Fixed the negative case though.
+      part->x += velocity_per_yaw * (std::sin(part->theta + delta_yaw) - sin_theta) + noise_x;
+      part->y += velocity_per_yaw * (-std::cos(part->theta + delta_yaw) + cos_theta) + noise_y;
     } else {
-      part->x += velocity * std::cos(part->theta) * delta_t + noise_x;
-      part->y += velocity * std::sin(part->theta) * delta_t + noise_y;
+      part->x += velocity * cos_theta * delta_t + noise_x;
+      part->y += velocity * sin_theta * delta_t + noise_y;
     }
   }
 }
